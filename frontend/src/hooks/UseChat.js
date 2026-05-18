@@ -1,16 +1,12 @@
 import { useState } from "react";
+import { INITIAL_MESSAGE } from "../constants/chat";
 
 const API_URL = "http://localhost:8000/api/chat";
 
-const INITIAL_MESSAGE = {
-  role: "assistant",
-  content: "Hey — I'm PocketTech's support agent. Ask me anything about our products, your order, or returns.",
-};
-
 export function useChat() {
-  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
-  const [loading, setLoading]   = useState(false);
-  const [history, setHistory]   = useState([]);
+  const [messages, setMessages]   = useState([INITIAL_MESSAGE]);
+  const [loading, setLoading]     = useState(false);
+  const [history, setHistory]     = useState([]);
   const [sessionId, setSessionId] = useState(null);
 
   const sendMessage = async (text) => {
