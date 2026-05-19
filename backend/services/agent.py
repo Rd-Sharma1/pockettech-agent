@@ -60,7 +60,7 @@ async def run_agent(message: str, history: List[Message]) -> dict:
     for _ in range(max_iterations):
         try:
             response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama3-groq-70b-8192-tool-use-preview",
                 max_tokens=1024,
                 tools=GROQ_TOOLS,
                 tool_choice="auto",
