@@ -1,14 +1,15 @@
 # services/agent.py
 # Owner: Mannu Gaurav
 
-import anthropic
+from groq import Groq
+import json
 from config import settings
 from models.schemas import Message
-from tools.definitions import TOOLS
+from tools.definition import TOOLS
 from services.shopify import get_product_info, get_order_status, initiate_return
 from typing import List
 
-client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+client = Groq(api_key=settings.groq_api_key)
 
 SYSTEM_PROMPT = """You are PocketTech's AI customer support agent. PocketTech is a Shopify store selling phone accessories — cases, cables, chargers, and screen protectors.
 
@@ -32,15 +33,22 @@ Store policies (answer these directly without a tool):
 - Warranty: 6 months on chargers and cables, 3 months on cases
 - Free shipping on orders above Rs.499"""
 
-
-def _is_retryable(error: anthropic.APIError) -> bool:
-    """Only retry on rate limits or server-side errors, not bad requests."""
-    status = getattr(error, "status_code", None)
-    return status is not None and (status == 429 or status >= 500)
+# Convert Anthropic-style tool schemas to OpenAI/Groq format
+GROQ_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": tool["name"],
+            "description": tool["description"],
+            "parameters": tool["input_schema"],
+        }
+    }
+    for tool in TOOLS
+]
 
 
 async def run_agent(message: str, history: List[Message]) -> dict:
-    messages = []
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for h in history:
         messages.append({"role": h.role, "content": h.content})
     messages.append({"role": "user", "content": message})
@@ -51,57 +59,45 @@ async def run_agent(message: str, history: List[Message]) -> dict:
 
     for _ in range(max_iterations):
         try:
-            response = client.messages.create(
-                model=settings.model,
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 max_tokens=1024,
-                system=SYSTEM_PROMPT,
-                tools=TOOLS,
+                tools=GROQ_TOOLS,
+                tool_choice="auto",
                 messages=messages,
             )
-        except anthropic.APIError as e:
-            # FIX: only retry transient errors (rate limit / 5xx),
-            # not permanent ones like 400 Bad Request
-            if _is_retryable(e):
-                try:
-                    response = client.messages.create(
-                        model=settings.model,
-                        max_tokens=1024,
-                        system=SYSTEM_PROMPT,
-                        tools=TOOLS,
-                        messages=messages,
-                    )
-                except anthropic.APIError:
-                    return {
-                        "reply": "I'm having trouble right now. Please try again in a moment.",
-                        "tool_used": None,
-                        "escalated": False,
-                    }
-            else:
-                return {
-                    "reply": "I'm having trouble right now. Please try again in a moment.",
-                    "tool_used": None,
-                    "escalated": False,
-                }
+        except Exception as e:
+            print(f"GROQ ERROR: {str(e)}")
+            return {
+                "reply": "I'm having trouble right now. Please try again in a moment.",
+                "tool_used": None,
+                "escalated": False,
+            }
 
-        if response.stop_reason == "tool_use":
-            tool_result_content = []
-            for block in response.content:
-                if block.type == "tool_use":
-                    tool_used = block.name
-                    result = await _execute_tool(block.name, block.input)
-                    if block.name == "escalate_to_human":
-                        escalated = True
-                    tool_result_content.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": str(result),
-                    })
-            messages.append({"role": "assistant", "content": response.content})
-            messages.append({"role": "user", "content": tool_result_content})
+        choice = response.choices[0]
+
+        if choice.finish_reason == "tool_calls":
+            tool_calls = choice.message.tool_calls
+            messages.append(choice.message)
+
+            for tc in tool_calls:
+                tool_used = tc.function.name
+                inputs = json.loads(tc.function.arguments)
+                result = await _execute_tool(tc.function.name, inputs)
+
+                if tc.function.name == "escalate_to_human":
+                    escalated = True
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(result),
+                })
             continue
 
-        if response.stop_reason == "end_turn":
-            reply = _extract_text(response.content)
+        if choice.finish_reason == "stop":
+            reply = choice.message.content or ""
+            reply = reply.strip()
             if not reply:
                 reply = "I couldn't process that. Could you rephrase your question?"
             return {"reply": reply, "tool_used": tool_used, "escalated": escalated}
@@ -127,10 +123,3 @@ async def _execute_tool(name: str, inputs: dict) -> dict:
             return {"error": f"Unknown tool: {name}"}
     except Exception as e:
         return {"error": f"Tool execution failed: {str(e)}"}
-
-
-def _extract_text(content: list) -> str:
-    for block in content:
-        if hasattr(block, "type") and block.type == "text":
-            return block.text.strip()
-    return ""

@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    anthropic_api_key: str
+    groq_api_key: str
     shopify_store_url: str
     shopify_admin_token: str
     shopify_api_version: str = "2024-01"
