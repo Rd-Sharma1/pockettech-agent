@@ -99,8 +99,8 @@ pockettech-agent/
 │           └── TypingIndicator.module.css
 │
 ├── docs/
-│   ├── product_document.pdf
-│   └── technical_document.pdf
+│   ├── ProductDoc.md
+│   └── TechnicalDoc.md
 │
 ├── .env.example
 ├── .gitignore
@@ -156,14 +156,14 @@ SHOPIFY_API_VERSION=2025-01
 
 ## Demo Video
 
-> Link: *(to be added before submission)*
+[Watch Demo Video](https://drive.google.com/file/d/1UO4vwkMwL9HUWCWDWyBxRZ1zBuObgrft/view)
 
 ---
 
 ## Documents
 
-- [Product Document](docs/product_document.pdf)
-- [Technical Document](docs/technical_document.pdf)
+- [Product Document](docs/ProductDoc.md)
+- [Technical Document](docs/TechnicalDoc.md)
 
 ---
 
