@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     shopify_store_url: str
     shopify_admin_token: str
     shopify_api_version: str = "2024-01"
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "openai/gpt-oss-20b"
 
     class Config:
         env_file = ".env"
