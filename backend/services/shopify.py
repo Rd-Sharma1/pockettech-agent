@@ -12,40 +12,79 @@ HEADERS = {
 
 
 async def get_product_info(product_id: str) -> dict:
-    """Fetch product details from Shopify Admin API."""
+    """Fetch product details from Shopify Admin API by ID or name."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.get(
-                f"{SHOPIFY_BASE}/products/{product_id}.json",
-                headers=HEADERS
-            )
-            if res.status_code == 404:
-                return {"error": "Product not found"}
-            if res.status_code != 200:
-                return {"error": f"Shopify returned {res.status_code}"}
+            # First try direct ID lookup
+            if product_id.isdigit():
+                res = await client.get(
+                    f"{SHOPIFY_BASE}/products/{product_id}.json",
+                    headers=HEADERS
+                )
+                if res.status_code == 200:
+                    data = res.json().get("product", {})
+                    return _format_product(data)
 
-            data = res.json().get("product", {})
-            return {
-                "id": data.get("id"),
-                "title": data.get("title"),
-                "description": _strip_html(data.get("body_html", "")),
-                "product_type": data.get("product_type"),
-                "tags": data.get("tags", ""),
-                "variants": [
-                    {
-                        "title": v.get("title"),
-                        "price": v.get("price"),
-                        "inventory_quantity": v.get("inventory_quantity"),
-                        "sku": v.get("sku"),
-                    }
-                    for v in data.get("variants", [])
-                ],
-            }
+            # Search by title if not a numeric ID
+            search_res = await client.get(
+                f"{SHOPIFY_BASE}/products.json",
+                headers=HEADERS,
+                params={"title": product_id, "limit": 5}
+            )
+
+            if search_res.status_code != 200:
+                return {"error": f"Shopify returned {search_res.status_code}"}
+
+            products = search_res.json().get("products", [])
+
+            if not products:
+                # Try broader search
+                all_res = await client.get(
+                    f"{SHOPIFY_BASE}/products.json",
+                    headers=HEADERS,
+                    params={"limit": 50}
+                )
+                if all_res.status_code == 200:
+                    all_products = all_res.json().get("products", [])
+                    # Match by partial name
+                    query = product_id.lower()
+                    matches = [
+                        p for p in all_products
+                        if query in p.get("title", "").lower()
+                        or query in p.get("product_type", "").lower()
+                        or query in p.get("tags", "").lower()
+                    ]
+                    if matches:
+                        return _format_product(matches[0])
+
+                return {"error": "Product not found"}
+
+            return _format_product(products[0])
+
     except httpx.TimeoutException:
         return {"error": "Request timed out fetching product info"}
     except Exception as e:
         return {"error": f"Failed to fetch product: {str(e)}"}
 
+
+def _format_product(data: dict) -> dict:
+    """Format product data for agent response."""
+    return {
+        "id": data.get("id"),
+        "title": data.get("title"),
+        "description": _strip_html(data.get("body_html", "")),
+        "product_type": data.get("product_type"),
+        "tags": data.get("tags", ""),
+        "variants": [
+            {
+                "title": v.get("title"),
+                "price": v.get("price"),
+                "inventory_quantity": v.get("inventory_quantity"),
+                "sku": v.get("sku"),
+            }
+            for v in data.get("variants", [])
+        ],
+    }
 
 async def get_order_status(order_id: str) -> dict:
     """Fetch order status and fulfillment from Shopify Admin API."""
