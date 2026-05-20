@@ -23,30 +23,28 @@ PocketTech's AI agent answers instantly, in context, with grounded store data.
 
 ## Tech Stack
 
-| Layer    | Technology                            |
-|----------|---------------------------------------|
-| Frontend | React (Vite), CSS Modules             |
-| Backend  | FastAPI (Python)                      |
-| LLM      | Claude API (claude-sonnet-4-20250514) |
-| Platform | Shopify Admin API                     |
-| Data     | Synthetic Shopify development store   |
+| Layer    | Technology                          |
+|----------|-------------------------------------|
+| Frontend | React (Vite), CSS Modules           |
+| Backend  | FastAPI (Python)                    |
+| LLM      | Groq API (openai/gpt-oss-20b)       |
+| Platform | Shopify Admin API                   |
+| Data     | Synthetic Shopify development store |
 
 ---
 
 ## Agent Capabilities
 
-| Tool                | What it does                                           |
-|---------------------|--------------------------------------------------------|
-| `get_product_info`  | Fetches specs, compatibility, description from Shopify |
-| `get_order_status`  | Returns live order status and estimated delivery       |
-| `initiate_return`   | Creates a return request via Shopify API               |
-| `escalate_to_human` | Graceful handoff with context for edge cases           |
+| Tool                | What it does                                                         |
+|---------------------|----------------------------------------------------------------------|
+| `get_product_info`  | Fetches specs, compatibility, description from Shopify by name or ID |
+| `get_order_status`  | Returns live order status and estimated delivery by order number     |
+| `initiate_return`   | Validates order and creates a return request                         |
+| `escalate_to_human` | Graceful handoff with context for edge cases                         |
 
 ---
 
 ## Project Structure
-
-```
 pockettech-agent/
 │
 ├── backend/
@@ -55,21 +53,21 @@ pockettech-agent/
 │   ├── requirements.txt
 │   │
 │   ├── models/
-│   │   ├── __init__.py
+│   │   ├── init.py
 │   │   └── schemas.py            # Pydantic models: ChatRequest, ChatResponse, Message
 │   │
 │   ├── routers/
-│   │   ├── __init__.py
+│   │   ├── init.py
 │   │   └── chat.py               # POST /api/chat endpoint
 │   │
 │   ├── services/
-│   │   ├── __init__.py
-│   │   ├── agent.py              # Claude API + tool calling loop
+│   │   ├── init.py
+│   │   ├── agent.py              # Groq API + tool calling loop
 │   │   └── shopify.py            # Shopify Admin API integration
 │   │
 │   └── tools/
-│       ├── __init__.py
-│       └── definitions.py        # Claude tool schemas
+│       ├── init.py
+│       └── definition.py         # Tool schemas for all 4 agent tools
 │
 ├── frontend/
 │   └── src/
@@ -105,7 +103,6 @@ pockettech-agent/
 ├── .env.example
 ├── .gitignore
 └── README.md
-```
 
 ---
 
@@ -114,7 +111,7 @@ pockettech-agent/
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Anthropic API key
+- Groq API key (free at console.groq.com)
 - Shopify development store + Admin API token
 
 ### Backend
@@ -146,10 +143,10 @@ Frontend runs at `http://localhost:5173`
 ## Environment Variables
 
 ```env
-ANTHROPIC_API_KEY=your_key_here
+GROQ_API_KEY=your_groq_key_here
 SHOPIFY_STORE_URL=your-store.myshopify.com
-SHOPIFY_ADMIN_TOKEN=your_token_here
-SHOPIFY_API_VERSION=2024-01
+SHOPIFY_ADMIN_TOKEN=shpat_your_token_here
+SHOPIFY_API_VERSION=2025-01
 ```
 
 ---
@@ -169,16 +166,16 @@ SHOPIFY_API_VERSION=2024-01
 
 ## Contribution Note
 
-**Ridam** — Product thinking, scope decisions, UI/UX (React, CSS Modules, component architecture), backend scaffolding (project structure, schemas, router, config), README, documentation.
+**Ridam** — Product thinking, scope decisions, and end-to-end UI/UX ownership (React, CSS Modules, full component architecture including ChatMessage, ChatInput, SuggestionPills, TypingIndicator, and LeftPanel), backend scaffolding (project structure, FastAPI setup, Pydantic schemas, chat router, config management), README, and all project documentation.
 
-**Mannu Gaurav** — Core agent logic (Claude API tool calling, prompt design), Shopify API integration, tool definitions, failure handling, system architecture.
+**Mannu Gaurav** — Designed and implemented the full AI agent layer: Groq API tool-calling loop with 5-iteration cap and transient-only retry logic, Shopify Admin API integration (product search by name and ID, order lookup by order number, return validation with fulfillment line item resolution), tool schemas for all 4 agent tools, system prompt engineering, and bug fixes including order name lookup, product search by keyword, and API version migration.
 
 ---
 
 ## Known Limitations
 
 - English only
-- Return initiation runs against a development store (safe/reversible)
+- Return initiation validates against real Shopify order data but uses simulated confirmation response on development store
 - Payment disputes always escalate — not handled autonomously
 - No persistent conversation history across sessions
 
