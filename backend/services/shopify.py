@@ -57,6 +57,8 @@ async def get_order_status(order_id: str) -> dict:
                 f"{SHOPIFY_BASE}/orders/{clean_id}.json",
                 headers=HEADERS
             )
+            # print(f"SHOPIFY STATUS: {res.status_code}")
+            # print(f"SHOPIFY RESPONSE: {res.text[:500]}")
             if res.status_code == 404:
                 return {"error": "Order not found. Please check your order number."}
             if res.status_code != 200:

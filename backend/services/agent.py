@@ -60,14 +60,14 @@ async def run_agent(message: str, history: List[Message]) -> dict:
     for _ in range(max_iterations):
         try:
             response = client.chat.completions.create(
-                model="llama3-groq-70b-8192-tool-use-preview",
+                model="openai/gpt-oss-20b",
                 max_tokens=1024,
                 tools=GROQ_TOOLS,
                 tool_choice="auto",
                 messages=messages,
             )
         except Exception as e:
-            print(f"GROQ ERROR: {str(e)}")
+            # print(f"GROQ ERROR: {str(e)}")
             return {
                 "reply": "I'm having trouble right now. Please try again in a moment.",
                 "tool_used": None,
