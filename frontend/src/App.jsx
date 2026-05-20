@@ -27,7 +27,7 @@ export default function App() {
             <h1 className={styles.headerTitle}>Support</h1>
             <p className={styles.headerSub}>AI-powered · Instant answers</p>
           </div>
-          <span className={styles.modelBadge}>claude-sonnet</span>
+          <span className={styles.modelBadge}>Groq-AI</span>
         </header>
 
         <div className={styles.messages}>

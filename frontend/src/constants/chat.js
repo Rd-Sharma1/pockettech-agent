@@ -1,8 +1,8 @@
 export const SUGGESTIONS = [
-  { icon: "⌕",  label: "Track my order",     message: "Where is my order? Order ID: #PT1042" },
+  { icon: "⌕",  label: "Track my order",     message: "Where is my order?" },
   { icon: "↩",  label: "Return an item",      message: "I want to return an item I purchased" },
-  { icon: "⚡", label: "Compatibility check", message: "Does the NanoCharge 65W work with iPhone 15 Pro?" },
-  { icon: "◻",  label: "Warranty policy",     message: "What is your warranty policy on chargers?" },
+  { icon: "⚡", label: "Compatibility check", message: "Does the item works with my phone?" },
+  { icon: "◻",  label: "Warranty policy",     message: "What is your warranty policy?" },
 ];
 
 export const TOOL_LABELS = {
