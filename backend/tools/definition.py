@@ -1,4 +1,4 @@
-# tools/definitions.py
+# tools/definition.py
 # Owner: Mannu Gaurav
 
 TOOLS = [
