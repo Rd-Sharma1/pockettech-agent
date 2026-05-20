@@ -45,6 +45,8 @@ PocketTech's AI agent answers instantly, in context, with grounded store data.
 ---
 
 ## Project Structure
+
+```
 pockettech-agent/
 │
 ├── backend/
@@ -103,6 +105,7 @@ pockettech-agent/
 ├── .env.example
 ├── .gitignore
 └── README.md
+```
 
 ---
 
