@@ -166,7 +166,7 @@ SHOPIFY_API_VERSION=2025-01
 
 ## Contribution Note
 
-**Ridam** — Product thinking, scope decisions, and end-to-end UI/UX ownership (React, CSS Modules, full component architecture including ChatMessage, ChatInput, SuggestionPills, TypingIndicator, and LeftPanel), backend scaffolding (project structure, FastAPI setup, Pydantic schemas, chat router, config management), README, and all project documentation.
+**Ridam** — Product thinking, scope decisions, and end-to-end UI/UX ownership (React, CSS Modules, full component architecture including ChatMessage, ChatInput, SuggestionPills, TypingIndicator, and LeftPanel), backend scaffolding (project structure, FastAPI setup, Pydantic schemas, chat router, config management), README, and project documentation.
 
 **Mannu Gaurav** — Designed and implemented the full AI agent layer: Groq API tool-calling loop with 5-iteration cap and transient-only retry logic, Shopify Admin API integration (product search by name and ID, order lookup by order number, return validation with fulfillment line item resolution), tool schemas for all 4 agent tools, system prompt engineering, and bug fixes including order name lookup, product search by keyword, and API version migration.
 
