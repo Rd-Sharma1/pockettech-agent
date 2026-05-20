@@ -49,22 +49,36 @@ async def get_product_info(product_id: str) -> dict:
 
 async def get_order_status(order_id: str) -> dict:
     """Fetch order status and fulfillment from Shopify Admin API."""
-    clean_id = order_id.lstrip("#")
+    clean_id = order_id.lstrip("#").strip()
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            res = await client.get(
-                f"{SHOPIFY_BASE}/orders/{clean_id}.json",
-                headers=HEADERS
+            # First try searching by order name (e.g. 1001)
+            search_res = await client.get(
+                f"{SHOPIFY_BASE}/orders.json",
+                headers=HEADERS,
+                params={"name": clean_id, "status": "any"}
             )
-            # print(f"SHOPIFY STATUS: {res.status_code}")
-            # print(f"SHOPIFY RESPONSE: {res.text[:500]}")
-            if res.status_code == 404:
-                return {"error": "Order not found. Please check your order number."}
-            if res.status_code != 200:
-                return {"error": f"Shopify returned {res.status_code}"}
 
-            data = res.json().get("order", {})
+            if search_res.status_code != 200:
+                return {"error": f"Shopify returned {search_res.status_code}"}
+
+            orders = search_res.json().get("orders", [])
+
+            # If not found by name, try direct ID lookup
+            if not orders:
+                direct_res = await client.get(
+                    f"{SHOPIFY_BASE}/orders/{clean_id}.json",
+                    headers=HEADERS
+                )
+                if direct_res.status_code == 404:
+                    return {"error": "Order not found. Please check your order number."}
+                if direct_res.status_code != 200:
+                    return {"error": f"Shopify returned {direct_res.status_code}"}
+                data = direct_res.json().get("order", {})
+            else:
+                data = orders[0]
+
             fulfillments = data.get("fulfillments", [])
             tracking = None
             if fulfillments:
@@ -81,11 +95,11 @@ async def get_order_status(order_id: str) -> dict:
                     for item in data.get("line_items", [])
                 ],
             }
+
     except httpx.TimeoutException:
         return {"error": "Request timed out fetching order status"}
     except Exception as e:
         return {"error": f"Failed to fetch order: {str(e)}"}
-
 
 async def initiate_return(order_id: str, reason: str) -> dict:
     """Create a return request via Shopify API."""
